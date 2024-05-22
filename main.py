@@ -1,12 +1,11 @@
+from tryon.preprocessing import segment_human, segment_garment, extract_garment
+import argparse
+import os
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import time
-import os
-import argparse
-
-from tryon.preprocessing import segment_human, segment_garment, extract_garment
 
 if __name__ == '__main__':
     argp = argparse.ArgumentParser(description="Tryon preprocessing")
@@ -40,5 +39,5 @@ if __name__ == '__main__':
         print('Start time:', int(time.time()))
         image_path = os.path.join(args.dataset, "original_human", "model.jpg")
         output_dir = os.path.join(args.dataset, "human_segmented")
-        segment_human(image_path=image_path, output_dir=output_dir)
+        Segment_human(image_path=image_path, output_dir=output_dir)
         print("End time:", int(time.time()))

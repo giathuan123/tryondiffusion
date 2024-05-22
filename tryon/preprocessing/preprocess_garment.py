@@ -23,7 +23,8 @@ def segment_garment(inputs_dir, outputs_dir, cls="all"):
          NormalizeImage(0.5, 0.5)]
     )
 
-    net = load_cloth_segm_model(device, os.environ.get("U2NET_CLOTH_SEGM_CHECKPOINT_PATH"), in_ch=3, out_ch=4)
+    net = load_cloth_segm_model(device, os.environ.get(
+        "U2NET_CLOTH_SEGM_CHECKPOINT_PATH"), in_ch=3, out_ch=4)
 
     images_list = sorted(os.listdir(inputs_dir))
     pbar = tqdm(total=len(images_list))
@@ -58,10 +59,12 @@ def segment_garment(inputs_dir, outputs_dir, cls="all"):
 
         for cls1 in classes_to_save:
             alpha_mask = (output_arr == cls1).astype(np.uint8) * 255
-            alpha_mask = alpha_mask[0]  # Selecting the first channel to make it 2D
+            # Selecting the first channel to make it 2D
+            alpha_mask = alpha_mask[0]
             alpha_mask_img = Image.fromarray(alpha_mask, mode='L')
             alpha_mask_img = alpha_mask_img.resize(img_size, Image.BICUBIC)
-            alpha_mask_img.save(os.path.join(outputs_dir, f'{image_name.split(".")[0]}_{cls1}.jpg'))
+            alpha_mask_img.save(os.path.join(
+                outputs_dir, f'{image_name.split(".")[0]}_{cls1}.jpg'))
 
         pbar.update(1)
 
@@ -70,10 +73,12 @@ def segment_garment(inputs_dir, outputs_dir, cls="all"):
 
 def extract_garment(inputs_dir, outputs_dir, cls="all", resize_to_width=None):
     os.makedirs(outputs_dir, exist_ok=True)
-    cloth_mask_dir = os.path.join(Path(outputs_dir).parent.absolute(), "cloth-mask")
+    cloth_mask_dir = os.path.join(
+        Path(outputs_dir).parent.absolute(), "cloth-mask")
     os.makedirs(cloth_mask_dir, exist_ok=True)
 
-    segment_garment(inputs_dir, os.path.join(Path(outputs_dir).parent.absolute(), "cloth-mask"), cls=cls)
+    segment_garment(inputs_dir, os.path.join(
+        Path(outputs_dir).parent.absolute(), "cloth-mask"), cls=cls)
 
     images_path = sorted(glob.glob(os.path.join(inputs_dir, "*")))
     masks_path = sorted(glob.glob(os.path.join(cloth_mask_dir, "*")))
@@ -86,8 +91,10 @@ def extract_garment(inputs_dir, outputs_dir, cls="all", resize_to_width=None):
         cutout = resize_by_bigger_index(cutout)
 
         canvas = np.ones((1024, 768, 3), np.uint8) * 255
-        y1, y2 = (canvas.shape[0] - cutout.shape[0]) // 2, (canvas.shape[0] + cutout.shape[0]) // 2
-        x1, x2 = (canvas.shape[1] - cutout.shape[1]) // 2, (canvas.shape[1] + cutout.shape[1]) // 2
+        y1, y2 = (canvas.shape[0] - cutout.shape[0]
+                  ) // 2, (canvas.shape[0] + cutout.shape[0]) // 2
+        x1, x2 = (canvas.shape[1] - cutout.shape[1]
+                  ) // 2, (canvas.shape[1] + cutout.shape[1]) // 2
 
         alpha_s = cutout[:, :, 3] / 255.0
         alpha_l = 1.0 - alpha_s
@@ -102,4 +109,5 @@ def extract_garment(inputs_dir, outputs_dir, cls="all", resize_to_width=None):
 
         canvas = Image.fromarray(canvas)
 
-        canvas.save(os.path.join(outputs_dir, f"{os.path.basename(mask_path).split('.')[0]}.jpg"), format='JPEG')
+        canvas.save(os.path.join(
+            outputs_dir, f"{os.path.basename(mask_path).split('.')[0]}.jpg"), format='JPEG')

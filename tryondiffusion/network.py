@@ -30,7 +30,8 @@ class DownSample(nn.Module):
         x = rearrange(x, "b c (h p1) (w p2) -> b (c p1 p2) h w", p1=2, p2=2)
         x = self.conv(x)
         # calculate positional embedding from positional encoding t
-        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        emb = self.emb_layer(t)[:, :, None, None].repeat(
+            1, 1, x.shape[-2], x.shape[-1])
         return x + emb
 
 
@@ -54,7 +55,8 @@ class UpSample(nn.Module):
         x = self.up(x)
         x = self.conv(x)
         # calculate positional embedding from positional encoding t
-        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        emb = self.emb_layer(t)[:, :, None, None].repeat(
+            1, 1, x.shape[-2], x.shape[-1])
         return x + emb
 
 
@@ -67,7 +69,8 @@ class SinusoidalPosEmbed(nn.Module):
         device = t.device
         half_dim = self.dim // 2
         pos_embed = math.log(10000) / (half_dim - 1)
-        pos_embed = torch.exp(torch.arange(half_dim, device=device) * -pos_embed)
+        pos_embed = torch.exp(torch.arange(
+            half_dim, device=device) * -pos_embed)
         pos_embed = t[:, None] * pos_embed[None, :]
         pos_embed = torch.cat((pos_embed.sin(), pos_embed.cos()), dim=-1)
         return pos_embed
@@ -82,7 +85,8 @@ class AttentionPool1d(nn.Module):
         :param num_heads: number of attention heads
         """
         super().__init__()
-        self.positional_embedding = nn.Parameter(torch.randn(3, pose_embeb_dim) / pose_embeb_dim ** 0.5)
+        self.positional_embedding = nn.Parameter(
+            torch.randn(3, pose_embeb_dim) / pose_embeb_dim ** 0.5)
         self.k_proj = nn.Linear(pose_embeb_dim, pose_embeb_dim)
         self.q_proj = nn.Linear(pose_embeb_dim, pose_embeb_dim)
         self.v_proj = nn.Linear(pose_embeb_dim, pose_embeb_dim)
@@ -108,7 +112,8 @@ class AttentionPool1d(nn.Module):
             k_proj_weight=self.k_proj.weight,
             v_proj_weight=self.v_proj.weight,
             in_proj_weight=None,
-            in_proj_bias=torch.cat([self.q_proj.bias, self.k_proj.bias, self.v_proj.bias]),
+            in_proj_bias=torch.cat(
+                [self.q_proj.bias, self.k_proj.bias, self.v_proj.bias]),
             bias_k=None,
             bias_v=None,
             add_zero_attn=False,
@@ -149,7 +154,8 @@ class FiLM(nn.Module):
         clip_pooled_embed = self.activation(clip_pooled_embed)
         gamma = clip_pooled_embed[:, 0:self.channels]
         beta = clip_pooled_embed[:, self.channels:self.channels + 1]
-        film_features = torch.add(torch.mul(img_embed, gamma[:, :, None, None]), beta[:, :, None, None])
+        film_features = torch.add(
+            torch.mul(img_embed, gamma[:, :, None, None]), beta[:, :, None, None])
         return film_features
 
 
@@ -205,7 +211,8 @@ class SelfAttention(nn.Module):
         self.q_scale = nn.Parameter(torch.ones(dim_head))
         self.k_scale = nn.Parameter(torch.ones(dim_head))
 
-        self.to_context = nn.Sequential(nn.LayerNorm(pose_dim), nn.Linear(pose_dim, dim_head * 2))
+        self.to_context = nn.Sequential(nn.LayerNorm(
+            pose_dim), nn.Linear(pose_dim, dim_head * 2))
 
         self.to_out = nn.Sequential(
             nn.Linear(inner_dim, dim, bias=False),
@@ -340,15 +347,18 @@ class ResBlockNoAttention(nn.Module):
         if input_channel is None:
             input_channel = block_channel
 
-        self.gn1 = nn.GroupNorm(min(32, int(abs(input_channel / 4))), int(input_channel))
+        self.gn1 = nn.GroupNorm(
+            min(32, int(abs(input_channel / 4))), int(input_channel))
         self.swish1 = nn.SiLU(True)
         self.conv1 = nn.Conv2d(input_channel, block_channel, (3, 3), padding=1)
 
-        self.gn2 = nn.GroupNorm(min(32, int(abs(block_channel / 4))), int(block_channel))
+        self.gn2 = nn.GroupNorm(
+            min(32, int(abs(block_channel / 4))), int(block_channel))
         self.swish2 = nn.SiLU(True)
         self.conv2 = nn.Conv2d(block_channel, block_channel, (3, 3), padding=1)
 
-        self.conv_residual = nn.Conv2d(input_channel, block_channel, (3, 3), padding=1)
+        self.conv_residual = nn.Conv2d(
+            input_channel, block_channel, (3, 3), padding=1)
 
     def forward(self, x, clip_embeddings, unet_residual=None):
 
@@ -382,14 +392,17 @@ class ResBlockAttention(nn.Module):
         if input_channel is None:
             input_channel = block_channel
 
-        self.gn1 = nn.GroupNorm(min(32, int(abs(input_channel / 4))), int(input_channel))
+        self.gn1 = nn.GroupNorm(
+            min(32, int(abs(input_channel / 4))), int(input_channel))
         self.swish1 = nn.SiLU(True)
         self.conv1 = nn.Conv2d(input_channel, block_channel, (3, 3), padding=1)
-        self.gn2 = nn.GroupNorm(min(32, int(abs(block_channel / 4))), int(block_channel))
+        self.gn2 = nn.GroupNorm(
+            min(32, int(abs(block_channel / 4))), int(block_channel))
         self.swish2 = nn.SiLU(True)
         self.conv2 = nn.Conv2d(block_channel, block_channel, (3, 3), padding=1)
 
-        self.conv_residual = nn.Conv2d(input_channel, block_channel, (3, 3), padding=1)
+        self.conv_residual = nn.Conv2d(
+            input_channel, block_channel, (3, 3), padding=1)
 
         att_dim = (hw_dim // 2) ** 2
         # pose vector length will be same as clip pooled length
@@ -417,7 +430,8 @@ class ResBlockAttention(nn.Module):
         h = self.self_attention(h, pose_embed)
 
         # cross attention with query from zt and key value from ic
-        garment_embed = rearrange(garment_embed, "b c (h p1) (w p2) -> b (c p1 p2) (h w)", p1=2, p2=2)
+        garment_embed = rearrange(
+            garment_embed, "b c (h p1) (w p2) -> b (c p1 p2) (h w)", p1=2, p2=2)
         h = self.cross_attention(h, garment_embed)
 
         h = rearrange(h, "b (c p1 p2) (h w) -> b c (h p1) (w p2)",
@@ -434,12 +448,13 @@ class UNetBlockNoAttention(nn.Module):
         for idx, block in enumerate(range(res_blocks_number)):
             if idx != 0:
                 input_channel = None
-            self.blocks.append(ResBlockNoAttention(block_channel, clip_dim, input_channel=input_channel))
+            self.blocks.append(ResBlockNoAttention(
+                block_channel, clip_dim, input_channel=input_channel))
 
     def forward(self, x, clip_embeddings, unet_residual=None):
         for idx, block in enumerate(self.blocks):
             if idx != 0:
-                unet_residual=None
+                unet_residual = None
             x = block(x, clip_embeddings, unet_residual)
         return x
 
@@ -466,7 +481,8 @@ class UNetBlockAttention(nn.Module):
         for idx, block in enumerate(self.blocks):
             if idx != 0:
                 unet_residual = None
-            x = block(x, clip_embeddings, pose_embed, garment_embed, unet_residual)
+            x = block(x, clip_embeddings, pose_embed,
+                      garment_embed, unet_residual)
         return x
 
 
@@ -491,20 +507,23 @@ class UNet128(nn.Module):
         self.block1_person = UNetBlockNoAttention(block_channel=128,
                                                   clip_dim=pose_embed_len_dim,
                                                   res_blocks_number=3)
-        self.downsample1_person = DownSample(dim=128, dim_out=256, t_emb_dim=time_dim)
+        self.downsample1_person = DownSample(
+            dim=128, dim_out=256, t_emb_dim=time_dim)
 
         # 64 unit encoder person
         self.block2_person = UNetBlockNoAttention(block_channel=256,
                                                   clip_dim=pose_embed_len_dim,
                                                   res_blocks_number=4)
-        self.downsample2_person = DownSample(dim=256, dim_out=512, t_emb_dim=time_dim)
+        self.downsample2_person = DownSample(
+            dim=256, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit encoder person
         self.block3_person = UNetBlockAttention(block_channel=512,
                                                 clip_dim=pose_embed_len_dim,
                                                 res_blocks_number=6,
                                                 hw_dim=32)
-        self.downsample3_person = DownSample(dim=512, dim_out=1024, t_emb_dim=time_dim)
+        self.downsample3_person = DownSample(
+            dim=512, dim_out=1024, t_emb_dim=time_dim)
 
         # 16 unit encoder person
         self.block4_person = UNetBlockAttention(block_channel=1024,
@@ -518,7 +537,8 @@ class UNet128(nn.Module):
                                                 res_blocks_number=7,
                                                 hw_dim=16,
                                                 input_channel=1024*2)
-        self.upsample1_person = UpSample(dim=1024, dim_out=512, t_emb_dim=time_dim)
+        self.upsample1_person = UpSample(
+            dim=1024, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit decoder person
         self.block6_person = UNetBlockAttention(block_channel=512,
@@ -526,14 +546,16 @@ class UNet128(nn.Module):
                                                 res_blocks_number=6,
                                                 hw_dim=32,
                                                 input_channel=512*2)
-        self.upsample2_person = UpSample(dim=512, dim_out=256, t_emb_dim=time_dim)
+        self.upsample2_person = UpSample(
+            dim=512, dim_out=256, t_emb_dim=time_dim)
 
         # 64 unit decoder person
         self.block7_person = UNetBlockNoAttention(block_channel=256,
                                                   clip_dim=pose_embed_len_dim,
                                                   res_blocks_number=4,
                                                   input_channel=256*2)
-        self.upsample3_person = UpSample(dim=256, dim_out=128, t_emb_dim=time_dim)
+        self.upsample3_person = UpSample(
+            dim=256, dim_out=128, t_emb_dim=time_dim)
 
         # 128 unit decoder person
         self.block8_person = UNetBlockNoAttention(block_channel=128,
@@ -552,19 +574,22 @@ class UNet128(nn.Module):
         self.block1_garment = UNetBlockNoAttention(block_channel=128,
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=3)
-        self.downsample1_garment = DownSample(dim=128, dim_out=256, t_emb_dim=time_dim)
+        self.downsample1_garment = DownSample(
+            dim=128, dim_out=256, t_emb_dim=time_dim)
 
         # 64 unit encoder garment
         self.block2_garment = UNetBlockNoAttention(block_channel=256,
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=4)
-        self.downsample2_garment = DownSample(dim=256, dim_out=512, t_emb_dim=time_dim)
+        self.downsample2_garment = DownSample(
+            dim=256, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit encoder garment
         self.block3_garment = UNetBlockNoAttention(block_channel=512,
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=6)
-        self.downsample3_garment = DownSample(dim=512, dim_out=1024, t_emb_dim=time_dim)
+        self.downsample3_garment = DownSample(
+            dim=512, dim_out=1024, t_emb_dim=time_dim)
 
         # 16 unit encoder garment
         self.block4_garment = UNetBlockNoAttention(block_channel=1024,
@@ -576,7 +601,8 @@ class UNet128(nn.Module):
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=7,
                                                    input_channel=1024*2)
-        self.upsample1_garment = UpSample(dim=1024, dim_out=512, t_emb_dim=time_dim)
+        self.upsample1_garment = UpSample(
+            dim=1024, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit decoder garment
         self.block6_garment = UNetBlockNoAttention(block_channel=512,
@@ -600,10 +626,12 @@ class UNet128(nn.Module):
         pos_encoding = self.pos_encod_layer(time_step)
 
         # concat pose embeddings
-        pose_embeddings = torch.concat((person_pose_embedding[:, None, :], garment_pose_embedding[:, None, :]), dim=1)
+        pose_embeddings = torch.concat(
+            (person_pose_embedding[:, None, :], garment_pose_embedding[:, None, :]), dim=1)
 
         # get clip embeddings
-        clip_embedding = self.attn_pool_layer(pose_embeddings, time_step, noise_level)
+        clip_embedding = self.attn_pool_layer(
+            pose_embeddings, time_step, noise_level)
 
         # passing through initial conv layer
         ic = self.init_conv_garment(ic)
@@ -630,7 +658,8 @@ class UNet128(nn.Module):
 
         # 32 - person
         zt = self.downsample2_person(zt_64_1, pos_encoding)
-        zt_32_1 = self.block3_person(zt, clip_embedding, pose_embeddings, ic_32_1)
+        zt_32_1 = self.block3_person(
+            zt, clip_embedding, pose_embeddings, ic_32_1)
         # print(f"zt 32 encoder {zt_32_1.size()}")
 
         # 16 - garment
@@ -639,14 +668,16 @@ class UNet128(nn.Module):
 
         # 16 - person
         zt = self.downsample3_person(zt_32_1, pos_encoding)
-        zt_16_1 = self.block4_person(zt, clip_embedding, pose_embeddings, ic_16_1)
+        zt_16_1 = self.block4_person(
+            zt, clip_embedding, pose_embeddings, ic_16_1)
 
         # 16 - garment
         ic_16_2 = self.block5_garment(ic_16_1, clip_embedding, ic_16_1)
         # print(f"ic 16 decoder {ic_16_2.size()}")
 
         # 16 - person
-        zt_16_2 = self.block5_person(zt_16_1, clip_embedding, pose_embeddings, ic_16_2, zt_16_1)
+        zt_16_2 = self.block5_person(
+            zt_16_1, clip_embedding, pose_embeddings, ic_16_2, zt_16_1)
         # print(f"zt 16 decoder {zt_16_2.size()}")
 
         # 32 - garment
@@ -656,7 +687,8 @@ class UNet128(nn.Module):
 
         # 32 - person
         zt = self.upsample1_person(zt_16_2, pos_encoding)
-        zt_32_2 = self.block6_person(zt, clip_embedding, pose_embeddings, ic_32_2, zt_32_1)
+        zt_32_2 = self.block6_person(
+            zt, clip_embedding, pose_embeddings, ic_32_2, zt_32_1)
         # print(f"zt 32 decoder {zt_32_2.size()}")
 
         # 64 - person
@@ -694,14 +726,16 @@ class UNet64(nn.Module):
         self.block2_person = UNetBlockNoAttention(block_channel=256,
                                                   clip_dim=pose_embed_len_dim,
                                                   res_blocks_number=4)
-        self.downsample2_person = DownSample(dim=256, dim_out=512, t_emb_dim=time_dim)
+        self.downsample2_person = DownSample(
+            dim=256, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit encoder person
         self.block3_person = UNetBlockAttention(block_channel=512,
                                                 clip_dim=pose_embed_len_dim,
                                                 res_blocks_number=6,
                                                 hw_dim=32)
-        self.downsample3_person = DownSample(dim=512, dim_out=1024, t_emb_dim=time_dim)
+        self.downsample3_person = DownSample(
+            dim=512, dim_out=1024, t_emb_dim=time_dim)
 
         # 16 unit encoder person
         self.block4_person = UNetBlockAttention(block_channel=1024,
@@ -715,7 +749,8 @@ class UNet64(nn.Module):
                                                 res_blocks_number=7,
                                                 hw_dim=16,
                                                 input_channel=1024*2)
-        self.upsample1_person = UpSample(dim=1024, dim_out=512, t_emb_dim=time_dim)
+        self.upsample1_person = UpSample(
+            dim=1024, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit decoder person
         self.block6_person = UNetBlockAttention(block_channel=512,
@@ -723,7 +758,8 @@ class UNet64(nn.Module):
                                                 res_blocks_number=6,
                                                 hw_dim=32,
                                                 input_channel=512*2)
-        self.upsample2_person = UpSample(dim=512, dim_out=256, t_emb_dim=time_dim)
+        self.upsample2_person = UpSample(
+            dim=512, dim_out=256, t_emb_dim=time_dim)
 
         # 64 unit decoder person
         self.block7_person = UNetBlockNoAttention(block_channel=256,
@@ -742,13 +778,15 @@ class UNet64(nn.Module):
         self.block2_garment = UNetBlockNoAttention(block_channel=256,
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=4)
-        self.downsample2_garment = DownSample(dim=256, dim_out=512, t_emb_dim=time_dim)
+        self.downsample2_garment = DownSample(
+            dim=256, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit encoder garment
         self.block3_garment = UNetBlockNoAttention(block_channel=512,
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=6)
-        self.downsample3_garment = DownSample(dim=512, dim_out=1024, t_emb_dim=time_dim)
+        self.downsample3_garment = DownSample(
+            dim=512, dim_out=1024, t_emb_dim=time_dim)
 
         # 16 unit encoder garment
         self.block4_garment = UNetBlockNoAttention(block_channel=1024,
@@ -760,7 +798,8 @@ class UNet64(nn.Module):
                                                    clip_dim=pose_embed_len_dim,
                                                    res_blocks_number=7,
                                                    input_channel=1024*2)
-        self.upsample1_garment = UpSample(dim=1024, dim_out=512, t_emb_dim=time_dim)
+        self.upsample1_garment = UpSample(
+            dim=1024, dim_out=512, t_emb_dim=time_dim)
 
         # 32 unit decoder garment
         self.block6_garment = UNetBlockNoAttention(block_channel=512,
@@ -783,10 +822,12 @@ class UNet64(nn.Module):
         pos_encoding = self.pos_encod_layer(time_step)
 
         # concat pose embeddings
-        pose_embeddings = torch.concat((person_pose_embedding[:, None, :], garment_pose_embedding[:, None, :]), dim=1)
+        pose_embeddings = torch.concat(
+            (person_pose_embedding[:, None, :], garment_pose_embedding[:, None, :]), dim=1)
 
         # get clip embeddings
-        clip_embedding = self.attn_pool_layer(pose_embeddings, time_step, noise_level)
+        clip_embedding = self.attn_pool_layer(
+            pose_embeddings, time_step, noise_level)
 
         # passing through initial conv layer
         ic = self.init_conv_garment(ic)
@@ -806,7 +847,8 @@ class UNet64(nn.Module):
 
         # 32 - person
         zt = self.downsample2_person(zt_64_1, pos_encoding)
-        zt_32_1 = self.block3_person(zt, clip_embedding, pose_embeddings, ic_32_1)
+        zt_32_1 = self.block3_person(
+            zt, clip_embedding, pose_embeddings, ic_32_1)
 
         # 16 - garment
         ic = self.downsample3_garment(ic_32_1, pos_encoding)
@@ -814,13 +856,15 @@ class UNet64(nn.Module):
 
         # 16 - person
         zt = self.downsample3_person(zt_32_1, pos_encoding)
-        zt_16_1 = self.block4_person(zt, clip_embedding, pose_embeddings, ic_16_1)
+        zt_16_1 = self.block4_person(
+            zt, clip_embedding, pose_embeddings, ic_16_1)
 
         # 16 - garment
         ic_16_2 = self.block5_garment(ic_16_1, clip_embedding, ic_16_1)
 
         # 16 - person
-        zt_16_2 = self.block5_person(zt_16_1, clip_embedding, pose_embeddings, ic_16_2, zt_16_1)
+        zt_16_2 = self.block5_person(
+            zt_16_1, clip_embedding, pose_embeddings, ic_16_2, zt_16_1)
 
         # 32 - garment
         ic = self.upsample1_garment(ic_16_2, pos_encoding)
@@ -829,7 +873,8 @@ class UNet64(nn.Module):
 
         # 32 - person
         zt = self.upsample1_person(zt_16_2, pos_encoding)
-        zt_32_2 = self.block6_person(zt, clip_embedding, pose_embeddings, ic_32_2, zt_32_1)
+        zt_32_2 = self.block6_person(
+            zt, clip_embedding, pose_embeddings, ic_32_2, zt_32_1)
         # print(f"zt 32 decoder {zt_32_2.size()}")
 
         # 64 - person

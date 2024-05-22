@@ -38,10 +38,12 @@ def load_human_segm_model(device, model_name):
         net = None
 
     if torch.cuda.is_available():
-        net.load_state_dict(torch.load(os.environ.get("U2NET_SEGM_CHECKPOINT_PATH")))
+        net.load_state_dict(torch.load(
+            os.environ.get("U2NET_SEGM_CHECKPOINT_PATH")))
         net.cuda()
     else:
-        net.load_state_dict(torch.load(os.environ.get("U2NET_SEGM_CHECKPOINT_PATH"), map_location=device))
+        net.load_state_dict(torch.load(os.environ.get(
+            "U2NET_SEGM_CHECKPOINT_PATH"), map_location=device))
     net.eval()
 
     return net
