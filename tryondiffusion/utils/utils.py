@@ -56,7 +56,7 @@ class GaussianSmoothing(nn.Module):
         for size, std, mgrid in zip(kernel_size, sigma, meshgrids):
             mean = (size - 1) / 2
             kernel *= 1 / (std * math.sqrt(2 * math.pi)) * \
-                      torch.exp(-((mgrid - mean) / std) ** 2 / 2)
+                torch.exp(-((mgrid - mean) / std) ** 2 / 2)
 
         # Make sure sum of values in gaussian kernel equals 1.
         kernel = kernel / torch.sum(kernel)
@@ -76,7 +76,8 @@ class GaussianSmoothing(nn.Module):
             self.conv = F.conv3d
         else:
             raise RuntimeError(
-                'Only 1, 2 and 3 dimensions are supported. Received {}.'.format(conv_dim)
+                'Only 1, 2 and 3 dimensions are supported. Received {}.'.format(
+                    conv_dim)
             )
 
     def forward(self, input):

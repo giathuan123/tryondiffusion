@@ -36,6 +36,8 @@ def load_human_segm_model(device, model_name):
         net = u2net_human_segm.U2NETP(3, 1)
     else:
         net = None
+    if not net:
+        exit(1)
 
     if torch.cuda.is_available():
         net.load_state_dict(torch.load(

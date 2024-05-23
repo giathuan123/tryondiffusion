@@ -77,8 +77,10 @@ class Diffusion:
         return torch.randint(low=1, high=self.time_steps, size=(batch_size,))
 
     def add_noise_to_img(self, img, t):
-        sqrt_alpha_timestep = torch.sqrt(self.alpha_cumprod[t])[:, None, None, None]
-        sqrt_one_minus_alpha_timestep = torch.sqrt(1 - self.alpha_cumprod[t])[:, None, None, None]
+        sqrt_alpha_timestep = torch.sqrt(self.alpha_cumprod[t])[
+            :, None, None, None]
+        sqrt_one_minus_alpha_timestep = torch.sqrt(
+            1 - self.alpha_cumprod[t])[:, None, None, None]
         epsilon = torch.randn_like(img)
         return (sqrt_alpha_timestep * epsilon) + (sqrt_one_minus_alpha_timestep * epsilon), epsilon
 
@@ -101,7 +103,8 @@ class Diffusion:
             ia = smoothen_image(ia, sigma)
             ic = smoothen_image(ic, sigma)
 
-            inp_network_noise = torch.randn(batch_size, self.noise_input_channel, self.unet_dim, self.unet_dim).to(self.device)
+            inp_network_noise = torch.randn(
+                batch_size, self.noise_input_channel, self.unet_dim, self.unet_dim).to(self.device)
 
             # paper says to add noise augmentation to input noise during inference
             inp_network_noise = smoothen_image(inp_network_noise, sigma)
@@ -122,7 +125,8 @@ class Diffusion:
                 else:
                     noise = torch.zeros_like(inp_network_noise)
 
-                inp_network_noise = 1 / torch.sqrt(alpha) * (inp_network_noise - ((1 - alpha) / (torch.sqrt(1 - alpha_cumprod))) * predicted_noise) + torch.sqrt(beta) * noise
+                inp_network_noise = 1 / torch.sqrt(alpha) * (inp_network_noise - ((1 - alpha) / (
+                    torch.sqrt(1 - alpha_cumprod))) * predicted_noise) + torch.sqrt(beta) * noise
         inp_network_noise = (inp_network_noise.clamp(-1, 1) + 1) / 2
         inp_network_noise = (inp_network_noise * 255).type(torch.uint8)
         return inp_network_noise
@@ -143,11 +147,14 @@ class Diffusion:
                                          ic_dir=args.validation_ic_folder,
                                          unet_size=self.unet_dim)
 
-        self.train_dataloader = DataLoader(train_dataset, args.batch_size_train, shuffle=True)
+        self.train_dataloader = DataLoader(
+            train_dataset, args.batch_size_train, shuffle=True)
         # give args.batch_size_validation 1 while training
-        self.val_dataloader = DataLoader(validation_dataset, args.batch_size_validation, shuffle=True)
+        self.val_dataloader = DataLoader(
+            validation_dataset, args.batch_size_validation, shuffle=True)
 
-        self.optimizer = optim.AdamW(self.net.parameters(), lr=args.lr, eps=1e-4)
+        self.optimizer = optim.AdamW(
+            self.net.parameters(), lr=args.lr, eps=1e-4)
         self.scheduler = schedule_lr(total_steps=args.total_steps, start_lr=args.start_lr,
                                      stop_lr=args.stop_lr, pct_increasing_lr=args.pct_increasing_lr)
         self.mse = nn.MSELoss()
@@ -210,12 +217,16 @@ class Diffusion:
 
         for idx, (ip, jp, jg, ia, ic) in enumerate(self.val_dataloader):
             # sampled image
-            sampled_image = self.sample(use_ema=False, conditional_inputs=(ic, jp, jg, ia))
-            sampled_image = sampled_image[0].permute(1, 2, 0).squeeze().cpu().numpy()
+            sampled_image = self.sample(
+                use_ema=False, conditional_inputs=(ic, jp, jg, ia))
+            sampled_image = sampled_image[0].permute(
+                1, 2, 0).squeeze().cpu().numpy()
 
             # ema sampled image
-            ema_sampled_image = self.sample(use_ema=True, conditional_inputs=(ic, jp, jg, ia))
-            ema_sampled_image = ema_sampled_image[0].permute(1, 2, 0).squeeze().cpu().numpy()
+            ema_sampled_image = self.sample(
+                use_ema=True, conditional_inputs=(ic, jp, jg, ia))
+            ema_sampled_image = ema_sampled_image[0].permute(
+                1, 2, 0).squeeze().cpu().numpy()
 
             # base images
             ip_np = ip[0].permute(1, 2, 0).squeeze().cpu().numpy()
@@ -223,27 +234,36 @@ class Diffusion:
             ia_np = ia[0].permute(1, 2, 0).squeeze().cpu().numpy()
 
             # make to folders
-            os.makedirs(os.path.join("results", run_name, "images", f"{idx}_E{epoch}"), exist_ok=True)
+            os.makedirs(os.path.join("results", run_name, "images",
+                        f"{idx}_E{epoch}"), exist_ok=True)
 
             # define folder paths
-            images_folder = os.path.join("results", run_name, "images", f"{idx}_E{epoch}")
+            images_folder = os.path.join(
+                "results", run_name, "images", f"{idx}_E{epoch}")
 
             # save base images
             cv2.imwrite(os.path.join(images_folder, "ground_truth.png"), ip_np)
-            cv2.imwrite(os.path.join(images_folder, "segmented_garment.png"), ic_np)
-            cv2.imwrite(os.path.join(images_folder, "cloth_agnostic_rgb.png"), ia_np)
+            cv2.imwrite(os.path.join(images_folder,
+                        "segmented_garment.png"), ic_np)
+            cv2.imwrite(os.path.join(images_folder,
+                        "cloth_agnostic_rgb.png"), ia_np)
 
             # save sampled image
-            cv2.imwrite(os.path.join(images_folder, "sampled_image.png"), sampled_image)
+            cv2.imwrite(os.path.join(images_folder,
+                        "sampled_image.png"), sampled_image)
 
             # save ema sampled image
-            cv2.imwrite(os.path.join(images_folder, "ema_sampled_image.png"), ema_sampled_image)
+            cv2.imwrite(os.path.join(images_folder,
+                        "ema_sampled_image.png"), ema_sampled_image)
 
     def save_models(self, run_name, epoch=-1):
 
-        torch.save(self.net.state_dict(), os.path.join("models", run_name, f"ckpt_{epoch}.pt"))
-        torch.save(self.ema_net.state_dict(), os.path.join("models", run_name, f"ema_ckpt_{epoch}.pt"))
-        torch.save(self.optimizer.state_dict(), os.path.join("models", run_name, f"optim_{epoch}.pt"))
+        torch.save(self.net.state_dict(), os.path.join(
+            "models", run_name, f"ckpt_{epoch}.pt"))
+        torch.save(self.ema_net.state_dict(), os.path.join(
+            "models", run_name, f"ema_ckpt_{epoch}.pt"))
+        torch.save(self.optimizer.state_dict(), os.path.join(
+            "models", run_name, f"optim_{epoch}.pt"))
 
     def fit(self, args):
 
@@ -272,4 +292,5 @@ class Diffusion:
             if (epoch + 1) % args.model_saving_frequency == 0:
                 self.save_models(args.run_name, epoch)
 
-        logging.info(f"Training Done Successfully! Yayyy! Now let's hope for good results")
+        logging.info(
+            f"Training Done Successfully! Yayyy! Now let's hope for good results")

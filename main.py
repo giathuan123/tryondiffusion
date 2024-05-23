@@ -39,5 +39,5 @@ if __name__ == '__main__':
         print('Start time:', int(time.time()))
         image_path = os.path.join(args.dataset, "original_human", "model.jpg")
         output_dir = os.path.join(args.dataset, "human_segmented")
-        Segment_human(image_path=image_path, output_dir=output_dir)
+        segment_human(image_path=image_path, output_dir=output_dir)
         print("End time:", int(time.time()))
