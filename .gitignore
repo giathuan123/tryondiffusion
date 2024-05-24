@@ -163,3 +163,4 @@ u2net_cloth_segm.pth
 u2net_segm.pth
 inputs_dir
 tryondiffusion/*.pth
+model_weights
