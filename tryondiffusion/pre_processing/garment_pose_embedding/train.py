@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
 import os
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 
 
 def train(train_dir,
@@ -50,10 +50,13 @@ def train(train_dir,
             num_batches += 1
 
             if not num_batches % 125:
-                print(f"Running Loss; Iteration: {num_batches}, Train Loss: {(train_running_loss / num_batches):.4f}")
+                print(
+                    f"Running Loss; Iteration: {num_batches}, Train Loss: {(train_running_loss / num_batches):.4f}")
 
-        print(f"Epoch: {epoch + 1}/{num_epochs}, Train Loss: {(train_running_loss / num_batches):.4f}")
-        writer.add_scalar("Epoch_Loss/Train", train_running_loss / num_batches, epoch + 1)
+        print(
+            f"Epoch: {epoch + 1}/{num_epochs}, Train Loss: {(train_running_loss / num_batches):.4f}")
+        writer.add_scalar("Epoch_Loss/Train",
+                          train_running_loss / num_batches, epoch + 1)
 
         # validation
         test_running_loss = 0
@@ -68,14 +71,17 @@ def train(train_dir,
             test_running_loss += float(test_loss)
             num_test_batches += 1
 
-        print(f"Epoch: {epoch + 1}/{num_epochs}, Test Loss: {(test_running_loss / num_test_batches):.4f}")
-        writer.add_scalar("Epoch_Loss/Validation", test_running_loss / num_test_batches, epoch + 1)
+        print(
+            f"Epoch: {epoch + 1}/{num_epochs}, Test Loss: {(test_running_loss / num_test_batches):.4f}")
+        writer.add_scalar("Epoch_Loss/Validation",
+                          test_running_loss / num_test_batches, epoch + 1)
 
         if test_running_loss / num_test_batches < best_loss:
             print(f"Best Model Till Now: {epoch + 1}")
 
             best_loss = test_running_loss / num_test_batches
-            torch.save(model.state_dict(), os.path.join(model_save_path, f"best_model.pth"))
+            torch.save(model.state_dict(), os.path.join(
+                model_save_path, f"best_model.pth"))
 
         # torch.save(model.state_dict(), os.path.join(model_save_path, f"{epoch + 1}.pth"))
 
