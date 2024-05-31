@@ -29,6 +29,9 @@ def segment_garment(inputs_dir, outputs_dir, cls="all"):
     images_list = sorted(os.listdir(inputs_dir))
     pbar = tqdm(total=len(images_list))
 
+    if not net:
+        raise Exception("Model Not loaded")
+
     for image_name in images_list:
         img = Image.open(os.path.join(inputs_dir, image_name)).convert('RGB')
         img_size = img.size

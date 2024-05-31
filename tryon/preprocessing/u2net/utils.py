@@ -1,9 +1,6 @@
-import torch
-
-
 def normPRED(d):
-    ma = torch.max(d)
-    mi = torch.min(d)
+    ma = d.max()
+    mi = d.min()
 
     dn = (d - mi) / (ma - mi)
 

@@ -37,7 +37,7 @@ if __name__ == '__main__':
     elif args.action == "segment_human":
         # 2. segment human
         print('Start time:', int(time.time()))
-        image_path = os.path.join(args.dataset, "original_human", "model.jpg")
-        output_dir = os.path.join(args.dataset, "human_segmented")
-        segment_human(image_path=image_path, output_dir=output_dir)
+        inputs_dir = os.path.join(args.dataset, "original_human")
+        outputs_dir = os.path.join(args.dataset, "human_segmented")
+        segment_human(inputs_dir, outputs_dir)
         print("End time:", int(time.time()))
